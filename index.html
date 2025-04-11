@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Explorer Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Optional: Customize Tailwind theme if needed
+        tailwind.config = {
+            theme: {
+                extend: {
+                    borderRadius: {
+                        'none': '0px', // Ensure 'none' is explicitly 0px if needed
+                    },
+                    fontFamily: {
+                      sans: ['Inter', 'sans-serif'], // Use Inter font
+                    },
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Basic body styling */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* Light gray background */
+        }
+        /* Ensure sharp corners are default for components Tailwind might round */
+        input, select, button, textarea, table, thead, tbody, tr, td, th, div {
+           border-radius: 0px !important; /* Force sharp corners */
+        }
+        /* Custom scrollbar for webkit browsers (optional) */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 0px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #a0a0a0;
+            border-radius: 0px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #808080;
+        }
+        /* Style for loading overlay */
+        #loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.7);
+            z-index: 50;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .hidden {
+            visibility: hidden;
+        }
+        /* Simple spinner */
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%; /* Spinner itself can be round */
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Error message styling */
+        #error-message {
+            color: #dc2626; /* Red color for errors */
+            background-color: #fee2e2; /* Light red background */
+            border: 1px solid #ef4444; /* Red border */
+            padding: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 0.875rem; /* text-sm */
+        }
+        /* Styling for pagination buttons */
+        .pagination-btn {
+             background-color: #e5e7eb; /* gray-200 */
+             color: #374151; /* gray-700 */
+             padding: 8px 16px;
+             border: 1px solid #d1d5db; /* gray-300 */
+             cursor: pointer;
+             transition: background-color 0.2s ease-in-out;
+             font-size: 0.875rem;
+             font-weight: 500;
+             border-radius: 0px !important; /* Ensure sharp corners */
+        }
+        .pagination-btn:hover:not(:disabled) {
+             background-color: #d1d5db; /* gray-300 */
+        }
+        .pagination-btn:disabled {
+             opacity: 0.5;
+             cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="flex h-screen bg-gray-100">
+        <aside class="w-64 lg:w-72 bg-white p-5 flex flex-col border-r border-gray-200 rounded-none shadow-sm">
+            <h2 class="text-xl font-semibold mb-6 text-gray-700">Filters</h2>
+
+            <div class="space-y-5 overflow-y-auto flex-grow pr-2">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500 mb-2 uppercase">Company Info</h3>
+                    <div class="space-y-3">
+                        <input type="text" id="company-name" placeholder="Company Name" class="w-full p-2 border border-gray-300 rounded-none focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                        <select id="filter-industry" class="w-full p-2 border border-gray-300 rounded-none bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm" >
+                             <option value="">All Industries</option>
+                        </select>
+                        <input type="text" id="industry-name" placeholder="Industry Name" class="w-full p-2 border border-gray-300 rounded-none focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                        
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500 mb-2 uppercase">Location</h3>
+                    <div class="space-y-3">
+                        <input type="text" id="city" placeholder="City" class="w-full p-2 border border-gray-300 rounded-none focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                        <select id="filter-country" class="w-full p-2 border border-gray-300 rounded-none bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                            <option value="">All Countries</option>
+                            <option value="CM">Cameroon</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-gray-200 space-y-3">
+                <button id="apply-filters-btn" class="w-full bg-blue-600 text-white py-2 px-4 rounded-none hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-150 ease-in-out text-sm font-medium">
+                    Apply Filters
+                </button>
+                <button id="reset-filters-btn" class="w-full bg-gray-200 text-gray-700 py-2 px-4 rounded-none hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition duration-150 ease-in-out text-sm font-medium">
+                    Reset Filters
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <header class="bg-white shadow-sm rounded-none p-4 border-b border-gray-200">
+                <h1 class="text-xl font-semibold text-gray-800">Company Data</h1>
+            </header>
+
+            <div class="flex-1 overflow-y-auto bg-gray-50 p-6 relative">
+                <div id="loading-overlay" class="hidden">
+                    <div class="spinner"></div>
+                </div>
+
+                <div id="error-message" class="hidden">
+                    An error occurred. Please try again.
+                </div>
+
+                <div class="mb-4 text-sm text-gray-600" id="results-summary">
+                </div>
+
+                <div class="bg-white shadow-md rounded-none overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 rounded-none">
+                        <thead class="bg-gray-100 rounded-none">
+                            <tr class="rounded-none">
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-none">Name</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-none">City</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-none">State</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-none">Industry</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-none">Website</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-none">Phone</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-none">Regime</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-table-body" class="bg-white divide-y divide-gray-200">
+                            <tr id="empty-state-row" class="hidden rounded-none">
+                                <td colspan="7" class="px-6 py-10 text-center text-gray-500 text-sm"> No companies found matching your criteria.
+                                </td>
+                            </tr>
+                            <tr id="initial-load-row" class="rounded-none">
+                                <td colspan="7" class="px-6 py-10 text-center text-gray-500 text-sm"> Apply filters or load initial data to view companies.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+               
+                <div id="pagination-controls" class="mt-6 flex justify-between items-center">
+                    <button id="prev-page-btn" class="pagination-btn" disabled>Previous</button>
+                    <span id="page-info" class="text-sm text-gray-600">Page 1 of 1</span>
+                    <button id="next-page-btn" class="pagination-btn" disabled>Next</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const applyFiltersBtn = document.getElementById('apply-filters-btn');
+        const resetFiltersBtn = document.getElementById('reset-filters-btn');
+        const resultsTableBody = document.getElementById('results-table-body');
+        const resultsSummary = document.getElementById('results-summary');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const emptyStateRow = document.getElementById('empty-state-row');
+        const initialLoadRow = document.getElementById('initial-load-row');
+        const errorMessageDiv = document.getElementById('error-message');
+        const companyNameInput = document.getElementById('company-name');
+        const industryInput = document.getElementById('industry-name');
+        const cityInput = document.getElementById('city');
+        const filterInputs = document.querySelectorAll('aside input, aside select');
+        const industrySelect = document.getElementById('filter-industry');
+        const companySizeSelect = document.getElementById('filter-companySize');
+        const paginationControls = document.getElementById('pagination-controls');
+        const prevPageBtn = document.getElementById('prev-page-btn');
+        const nextPageBtn = document.getElementById('next-page-btn');
+        const pageInfoSpan = document.getElementById('page-info');
+
+        // --- API Endpoints ---
+        const API_BASE_URL = 'https://abmdata.onrender.com/supplier';
+        const COMPANY_SEARCH_URL = `${API_BASE_URL}/company/search`;
+        const INDUSTRY_URL = `${API_BASE_URL}/industry`;
+
+        // --- State Variables ---
+        let currentPage = 1;
+        let totalPages = 1;
+        const limit = 10; // Items per page
+        let isSearchMode = false;
+
+        // --- Functions ---
+        function showLoading() {
+            loadingOverlay.classList.remove('hidden');
+            errorMessageDiv.classList.add('hidden'); // Hide error on new load
+        }
+
+        function hideLoading() {
+            loadingOverlay.classList.add('hidden');
+        }
+
+        function showErrorMessage(message = "An error occurred. Please try again.") {
+            errorMessageDiv.textContent = message;
+            errorMessageDiv.classList.remove('hidden');
+        }
+
+        /**
+         * Populates a select element with options from an API
+         * @param {HTMLSelectElement} selectElement The select element to populate
+         * @param {string} url API endpoint URL
+         * @param {string} defaultText Text for the default option
+         */
+        async function populateSelect(selectElement, url, defaultText = 'All', loadingText = 'Loading...', errorText = 'Error loading') {
+            try {
+                // Store the default option
+                const defaultOption = selectElement.querySelector('option');
+                
+                // Show loading state
+                selectElement.innerHTML = `<option value="">${loadingText}</option>`;
+                
+                const response = await fetch(url, { method: 'GET' });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Reset select with default option
+                selectElement.innerHTML = '';
+                if (defaultOption) {
+                    selectElement.appendChild(defaultOption);
+                } else {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = defaultText;
+                    selectElement.appendChild(option);
+                }
+                
+                // Add options from API
+                if (Array.isArray(data)) {
+                    data.forEach(item => {
+                        const option = document.createElement('option');
+                        // Adjust property names based on your API response structure
+                        option.value = item.name || item;
+                        option.textContent = item.name || item;
+                        selectElement.appendChild(option);
+                    });
+                } else if (data && data.data && Array.isArray(data.data)) {
+                    // Alternative structure if the array is nested in a 'data' property
+                    data.data.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.name || item;
+                        option.textContent = item.name || item;
+                        selectElement.appendChild(option);
+                    });
+                }
+                
+            } catch (error) {
+                console.error("Error populating select:", error);
+                selectElement.innerHTML = `<option value="">${errorText}</option>`;
+            }
+        }
+
+        /**
+         * Updates the results table with data.
+         * @param {Array<Object>} data Array of company objects.
+         */
+        function updateResultsTable(data) {
+            resultsTableBody.innerHTML = ''; // Clear existing rows
+            emptyStateRow.classList.add('hidden');
+            initialLoadRow.classList.add('hidden');
+
+            if (!data || data.length === 0) {
+                resultsTableBody.appendChild(emptyStateRow);
+                emptyStateRow.classList.remove('hidden');
+                return;
+            }
+
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                row.classList.add('rounded-none', 'hover:bg-gray-50');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${item.name || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.city || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.state || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.industry || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.website || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.phone || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.regime || 'N/A'}</td>
+                `;
+                resultsTableBody.appendChild(row);
+            });
+        }
+
+        /**
+         * Updates the pagination controls and summary text.
+         * @param {number} currentPageNum The current page number.
+         * @param {number} totalPagesNum The total number of pages.
+         * @param {number} itemsCount The number of items on the current page.
+         * @param {number|null} totalItemsNum The total number of items across all pages (optional).
+         */
+        function updatePagination(currentPageNum, totalPagesNum, itemsCount, totalItemsNum = null) {
+            currentPage = currentPageNum;
+            totalPages = totalPagesNum;
+
+            pageInfoSpan.textContent = `Page ${currentPage} of ${totalPages}`;
+            prevPageBtn.disabled = currentPage <= 1;
+            nextPageBtn.disabled = currentPage >= totalPages;
+
+            // Update summary text
+            if (itemsCount > 0) {
+                const startItem = (currentPage - 1) * limit + 1;
+                const endItem = startItem + itemsCount - 1;
+                resultsSummary.textContent = `Showing items ${startItem}-${endItem}${totalItemsNum ? ` of ${totalItemsNum}` : ''}.`;
+            } else if (!loadingOverlay.classList.contains('hidden')) {
+                resultsSummary.textContent = 'Loading...';
+            } else {
+                resultsSummary.textContent = "No companies found matching your criteria.";
+            }
+
+            // Show/hide pagination controls based on total pages
+            if (totalPages > 1) {
+                paginationControls.classList.remove('hidden');
+            } else {
+                paginationControls.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Gathers filter values for URL query parameters.
+         * @returns {URLSearchParams} An object containing the filter keys and values.
+         */
+        function getFiltersForQuery() {
+            const params = new URLSearchParams();
+            
+            // Check if we're in company name search mode
+            const companyName = companyNameInput.value.trim();
+            const city = cityInput.value.trim();
+            const industry = industryInput.value.trim();
+            
+            // Add other filters
+            filterInputs.forEach(input => {
+                if (input.id && input.value && 
+                    input.id !== 'company-name' && 
+                    input.id !== 'city' && 
+                    input.id !== 'industry-name') {
+                    // Extract the filter name from the ID (remove 'filter-' prefix if present)
+                    let key = input.id.startsWith('filter-') ? input.id.replace('filter-', '') : input.id;
+                    params.append(key, input.value);
+                }
+            });
+            
+            // Add fixed parameters for pagination
+            params.append('collection', 'analyses_data');
+            params.append('page', currentPage.toString());
+            params.append('limit', limit.toString());
+            
+            return params;
+        }
+
+        /**
+         * Fetches company data based on filters and page.
+         * @param {number} page The page number to fetch.
+         */
+        async function fetchCompanies(page = 1) {
+            showLoading();
+            updateResultsTable([]); // Clear table
+            resultsSummary.textContent = 'Loading companies...';
+            paginationControls.classList.add('hidden');
+            
+            currentPage = page;
+            const companyName = companyNameInput.value.trim();
+            const city = cityInput.value.trim();
+            const industry = industryInput.value.trim();
+            const params = new URLSearchParams();
+
+            // Check if any filter is provided and set isSearchMode accordingly
+            if (companyName || city || industry) {
+                isSearchMode = true;
+
+                if (companyName) {
+                    params.append('name', companyName);
+                }
+                if (city) {
+                    params.append('city', city);
+                }
+                if (industry) {
+                    params.append('industry', industry);
+                }
+
+                // Add pagination parameters
+                params.append('page', page);
+                params.append('limit', limit);
+
+                // Use the unified search endpoint
+                url = `${COMPANY_SEARCH_URL}?${params.toString()}`;
+            } else {
+                // When no search filters are provided, use the regular endpoint with additional filters if needed.
+                isSearchMode = false;
+                
+                // Get any additional filters from your existing function logic (if required)
+                const filters = getFiltersForQuery();
+                url = `${API_BASE_URL}?${filters.toString()}`;
+            }
+            
+            console.log("Fetching URL:", url);
+
+            try {
+                const response = await fetch(url, { method: 'GET' });
+
+                if (!response.ok) {
+                    let errorMsg = `Network response was not ok (status: ${response.status})`;
+                    try {
+                        const errorData = await response.json();
+                        errorMsg = errorData.message || errorMsg;
+                    } catch (e) { /* Ignore */ }
+                    throw new Error(errorMsg);
+                }
+
+                const responseData = await response.json();
+                console.log("API Response:", responseData);
+
+                // Adapt based on API response structure
+                const companies = responseData.data || []; // Ensure we have an array
+                const apiTotalPages = responseData.total_pages || 1;
+                const apiCurrentPage = responseData.page || page;
+                const totalItems = responseData.totalItems || null;
+
+                if (!Array.isArray(companies)) {
+                    console.error("API response's 'data' property is not an array:", responseData);
+                    throw new Error("Invalid data structure received from companies API.");
+                }
+
+                updateResultsTable(companies);
+                updatePagination(apiCurrentPage, apiTotalPages, companies.length, totalItems);
+
+            } catch (error) {
+                console.error("API Error:", error);
+                showErrorMessage(`Error loading companies: ${error.message}`);
+                updateResultsTable([]);
+                updatePagination(1, 1, 0);
+                resultsSummary.textContent = "";
+            } finally {
+                hideLoading();
+            }
+        }
+
+        /**
+         * Handles the Apply Filters button click.
+         */
+        function handleApplyFiltersClick() {
+            currentPage = 1; // Reset to page 1 when applying new filters
+            fetchCompanies(currentPage);
+        }
+
+        /**
+         * Resets all filter inputs and re-fetches data.
+         */
+        function handleResetFiltersClick() {
+            console.log("Resetting Filters");
+            filterInputs.forEach(input => {
+                if (input.tagName === 'SELECT') {
+                    input.selectedIndex = 0;
+                } else if (input.type === 'checkbox' || input.type === 'radio') {
+                    input.checked = false;
+                } else {
+                    input.value = '';
+                }
+            });
+            currentPage = 1;
+            isSearchMode = false;
+            fetchCompanies(currentPage);
+        }
+
+        // --- Event Listeners ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add event listeners
+            applyFiltersBtn.addEventListener('click', handleApplyFiltersClick);
+            resetFiltersBtn.addEventListener('click', handleResetFiltersClick);
+
+            prevPageBtn.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    fetchCompanies(currentPage - 1);
+                }
+            });
+
+            nextPageBtn.addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    fetchCompanies(currentPage + 1);
+                }
+            });
+
+            // Initial state setup
+            resultsTableBody.innerHTML = '';
+            resultsTableBody.appendChild(initialLoadRow);
+            initialLoadRow.classList.remove('hidden');
+            resultsSummary.textContent = '';
+            emptyStateRow.classList.add('hidden');
+            paginationControls.classList.add('hidden');
+
+            // Populate industry dropdown
+            populateSelect(industrySelect, INDUSTRY_URL, 'All Industries', 'Loading industries...', 'Error loading industries');
+            
+            // Fetch initial data
+            fetchCompanies(1);
+        });
+    </script>
+</body>
+</html>
