@@ -107,103 +107,147 @@
              opacity: 0.5;
              cursor: not-allowed;
         }
+
+        /* Mobile sidebar handling */
+        .sidebar {
+            transition: transform 0.3s ease-in-out;
+        }
+        .sidebar.mobile-hidden {
+            transform: translateX(-100%);
+        }
+        
+        /* Table responsive styles */
+        @media (max-width: 768px) {
+            .table-container {
+                overflow-x: auto;
+            }
+            
+            /* Stack the pagination controls on mobile */
+            #pagination-controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            #pagination-controls button {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body class="text-gray-800">
 
-    <div class="flex h-screen bg-gray-100">
-        <aside class="w-64 lg:w-72 bg-white p-5 flex flex-col border-r border-gray-200 rounded-none shadow-sm">
-            <h2 class="text-xl font-semibold mb-6 text-gray-700">Filters</h2>
+    <div class="flex flex-col h-screen bg-gray-100">
+        <!-- Mobile Header with Menu Button -->
+        <header class="bg-white shadow-sm p-4 flex justify-between items-center">
+            <h1 class="text-xl font-semibold text-gray-800">Company Data</h1>
+            <button id="toggle-sidebar" class="md:hidden bg-gray-200 text-gray-700 p-2 hover:bg-gray-300 focus:outline-none">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+        </header>
 
-            <div class="space-y-5 overflow-y-auto flex-grow pr-2">
-                <div>
-                    <h3 class="text-sm font-medium text-gray-500 mb-2 uppercase">Company Info</h3>
-                    <div class="space-y-3">
-                        <input type="text" id="company-name" placeholder="Company Name" class="w-full p-2 border border-gray-300 rounded-none focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm">
-                        <select id="filter-industry" class="w-full p-2 border border-gray-300 rounded-none bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm" >
-                             <option value="">All Industries</option>
-                        </select>
-                        <input type="text" id="industry-name" placeholder="Industry Name" class="w-full p-2 border border-gray-300 rounded-none focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm">
-                        
+        <div class="flex flex-1 overflow-hidden">
+            <!-- Sidebar - hidden by default on mobile -->
+            <aside id="sidebar" class="sidebar mobile-hidden absolute md:relative z-30 w-full md:w-64 lg:w-72 bg-white p-5 flex flex-col border-r border-gray-200 rounded-none shadow-sm h-full md:transform-none">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold text-gray-700">Filters</h2>
+                    <button id="close-sidebar" class="md:hidden bg-gray-200 text-gray-700 p-2 hover:bg-gray-300 focus:outline-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="space-y-5 overflow-y-auto flex-grow pr-2">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500 mb-2 uppercase">Company Info</h3>
+                        <div class="space-y-3">
+                            <input type="text" id="company-name" placeholder="Company Name" class="w-full p-2 border border-gray-300 rounded-none focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                            <select id="filter-industry" class="w-full p-2 border border-gray-300 rounded-none bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm" >
+                                 <option value="">All Industries</option>
+                            </select>
+                            <input type="text" id="industry-name" placeholder="Industry Name" class="w-full p-2 border border-gray-300 rounded-none focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500 mb-2 uppercase">Location</h3>
+                        <div class="space-y-3">
+                            <input type="text" id="city" placeholder="City" class="w-full p-2 border border-gray-300 rounded-none focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                            <select id="filter-country" class="w-full p-2 border border-gray-300 rounded-none bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                <option value="">All Countries</option>
+                                <option value="CM">Cameroon</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-                <div>
-                    <h3 class="text-sm font-medium text-gray-500 mb-2 uppercase">Location</h3>
-                    <div class="space-y-3">
-                        <input type="text" id="city" placeholder="City" class="w-full p-2 border border-gray-300 rounded-none focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm">
-                        <select id="filter-country" class="w-full p-2 border border-gray-300 rounded-none bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm">
-                            <option value="">All Countries</option>
-                            <option value="CM">Cameroon</option>
-                        </select>
+                <div class="mt-6 pt-4 border-t border-gray-200 space-y-3">
+                    <button id="apply-filters-btn" class="w-full bg-blue-600 text-white py-2 px-4 rounded-none hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-150 ease-in-out text-sm font-medium">
+                        Apply Filters
+                    </button>
+                    <button id="reset-filters-btn" class="w-full bg-gray-200 text-gray-700 py-2 px-4 rounded-none hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition duration-150 ease-in-out text-sm font-medium">
+                        Reset Filters
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Main content -->
+            <main class="flex-1 flex flex-col overflow-hidden">
+                <div class="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-6 relative">
+                    <div id="loading-overlay" class="hidden">
+                        <div class="spinner"></div>
+                    </div>
+
+                    <div id="error-message" class="hidden">
+                        An error occurred. Please try again.
+                    </div>
+
+                    <div class="mb-4 text-sm text-gray-600" id="results-summary">
+                    </div>
+
+                    <div class="table-container bg-white shadow-md rounded-none overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 rounded-none">
+                            <thead class="bg-gray-100 rounded-none">
+                                <tr class="rounded-none">
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-none">Name</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-none">City</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-none">State</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-none">Industry</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-none">Website</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-none">Phone</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-none">Regime</th>
+                                </tr>
+                            </thead>
+                            <tbody id="results-table-body" class="bg-white divide-y divide-gray-200">
+                                <tr id="empty-state-row" class="hidden rounded-none">
+                                    <td colspan="7" class="px-6 py-10 text-center text-gray-500 text-sm"> No companies found matching your criteria.
+                                    </td>
+                                </tr>
+                                <tr id="initial-load-row" class="rounded-none">
+                                    <td colspan="7" class="px-6 py-10 text-center text-gray-500 text-sm"> Apply filters or load initial data to view companies.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                   
+                    <div id="pagination-controls" class="mt-6 flex justify-between items-center">
+                        <button id="prev-page-btn" class="pagination-btn" disabled>Previous</button>
+                        <span id="page-info" class="text-sm text-gray-600">Page 1 of 1</span>
+                        <button id="next-page-btn" class="pagination-btn" disabled>Next</button>
                     </div>
                 </div>
-            </div>
-
-            <div class="mt-6 pt-4 border-t border-gray-200 space-y-3">
-                <button id="apply-filters-btn" class="w-full bg-blue-600 text-white py-2 px-4 rounded-none hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-150 ease-in-out text-sm font-medium">
-                    Apply Filters
-                </button>
-                <button id="reset-filters-btn" class="w-full bg-gray-200 text-gray-700 py-2 px-4 rounded-none hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition duration-150 ease-in-out text-sm font-medium">
-                    Reset Filters
-                </button>
-            </div>
-        </aside>
-
-        <main class="flex-1 flex flex-col overflow-hidden">
-            <header class="bg-white shadow-sm rounded-none p-4 border-b border-gray-200">
-                <h1 class="text-xl font-semibold text-gray-800">Company Data</h1>
-            </header>
-
-            <div class="flex-1 overflow-y-auto bg-gray-50 p-6 relative">
-                <div id="loading-overlay" class="hidden">
-                    <div class="spinner"></div>
-                </div>
-
-                <div id="error-message" class="hidden">
-                    An error occurred. Please try again.
-                </div>
-
-                <div class="mb-4 text-sm text-gray-600" id="results-summary">
-                </div>
-
-                <div class="bg-white shadow-md rounded-none overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 rounded-none">
-                        <thead class="bg-gray-100 rounded-none">
-                            <tr class="rounded-none">
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-none">Name</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-none">City</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-none">State</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-none">Industry</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-none">Website</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-none">Phone</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider rounded-none">Regime</th>
-                            </tr>
-                        </thead>
-                        <tbody id="results-table-body" class="bg-white divide-y divide-gray-200">
-                            <tr id="empty-state-row" class="hidden rounded-none">
-                                <td colspan="7" class="px-6 py-10 text-center text-gray-500 text-sm"> No companies found matching your criteria.
-                                </td>
-                            </tr>
-                            <tr id="initial-load-row" class="rounded-none">
-                                <td colspan="7" class="px-6 py-10 text-center text-gray-500 text-sm"> Apply filters or load initial data to view companies.
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-               
-                <div id="pagination-controls" class="mt-6 flex justify-between items-center">
-                    <button id="prev-page-btn" class="pagination-btn" disabled>Previous</button>
-                    <span id="page-info" class="text-sm text-gray-600">Page 1 of 1</span>
-                    <button id="next-page-btn" class="pagination-btn" disabled>Next</button>
-                </div>
-            </div>
-        </main>
+            </main>
+        </div>
     </div>
 
     <script>
         // --- DOM Elements ---
+        const sidebar = document.getElementById('sidebar');
+        const toggleSidebarBtn = document.getElementById('toggle-sidebar');
+        const closeSidebarBtn = document.getElementById('close-sidebar');
         const applyFiltersBtn = document.getElementById('apply-filters-btn');
         const resetFiltersBtn = document.getElementById('reset-filters-btn');
         const resultsTableBody = document.getElementById('results-table-body');
@@ -217,7 +261,6 @@
         const cityInput = document.getElementById('city');
         const filterInputs = document.querySelectorAll('aside input, aside select');
         const industrySelect = document.getElementById('filter-industry');
-        const companySizeSelect = document.getElementById('filter-companySize');
         const paginationControls = document.getElementById('pagination-controls');
         const prevPageBtn = document.getElementById('prev-page-btn');
         const nextPageBtn = document.getElementById('next-page-btn');
@@ -233,6 +276,11 @@
         let totalPages = 1;
         const limit = 10; // Items per page
         let isSearchMode = false;
+
+        // --- Sidebar Mobile Toggle ---
+        function toggleSidebar() {
+            sidebar.classList.toggle('mobile-hidden');
+        }
 
         // --- Functions ---
         function showLoading() {
@@ -480,6 +528,11 @@
                 updateResultsTable(companies);
                 updatePagination(apiCurrentPage, apiTotalPages, companies.length, totalItems);
 
+                // Auto-hide sidebar on mobile after search
+                if (window.innerWidth < 768) {
+                    sidebar.classList.add('mobile-hidden');
+                }
+
             } catch (error) {
                 console.error("API Error:", error);
                 showErrorMessage(`Error loading companies: ${error.message}`);
@@ -520,7 +573,11 @@
 
         // --- Event Listeners ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Add event listeners
+            // Add event listeners for sidebar toggle
+            toggleSidebarBtn.addEventListener('click', toggleSidebar);
+            closeSidebarBtn.addEventListener('click', toggleSidebar);
+            
+            // Add event listeners for filters
             applyFiltersBtn.addEventListener('click', handleApplyFiltersClick);
             resetFiltersBtn.addEventListener('click', handleResetFiltersClick);
 
@@ -533,6 +590,13 @@
             nextPageBtn.addEventListener('click', () => {
                 if (currentPage < totalPages) {
                     fetchCompanies(currentPage + 1);
+                }
+            });
+
+            // Handle window resize for responsive behavior
+            window.addEventListener('resize', () => {
+                if (window.innerWidth >= 768) {
+                    sidebar.classList.remove('mobile-hidden');
                 }
             });
 
